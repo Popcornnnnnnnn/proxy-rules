@@ -1,0 +1,54 @@
+# Clash 规则覆写层（Clash Verge 的 "规则" / Clash Meta 的 rule 覆写）
+#
+# 用法：在客户端里把这份文件作为订阅的「规则覆写」挂上去。
+# prepend 里的规则永远插在订阅自带规则之前，因此订阅更新不会冲掉它们。
+
+prepend:
+  # ── Gmail 邮件端口 ──────────────────────────────────────────────
+  # 住宅代理线路会丢弃 Gmail 的邮件端口（993/465/587/995），
+  # 表现为 Mail.app 弹 "SSL error"。这几个域名直连可通，故走 DIRECT。
+  - 'DOMAIN,imap.gmail.com,DIRECT'
+  - 'DOMAIN,smtp.gmail.com,DIRECT'
+  - 'DOMAIN,pop.gmail.com,DIRECT'
+
+  # ── 需要强制走代理的 ────────────────────────────────────────────
+  # 文章页图床解析到国内 CDN，订阅里的 cn DIRECT 规则会让它走本地网络，
+  # 结果 TLS 被重置，因此强制走节点。
+  - 'DOMAIN-SUFFIX,ndhixj.cn,PROXY'
+
+  # ── 网易云音乐 ──────────────────────────────────────────────────
+  # 含 Helper 进程的媒体下载，全部走直连，不受订阅规则影响。
+  - 'PROCESS-NAME,NeteaseMusic,DIRECT'
+  - 'PROCESS-NAME,NeteaseMusic Helper,DIRECT'
+  - 'DOMAIN-SUFFIX,music.163.com,DIRECT'
+  - 'DOMAIN-SUFFIX,music.126.net,DIRECT'
+
+  # ── 豆包输入法 / 字节系 ─────────────────────────────────────────
+  - 'PROCESS-NAME,DoubaoIme,DIRECT'
+  - 'PROCESS-NAME,DoubaoImeSettings,DIRECT'
+  - 'PROCESS-NAME,DoubaoImeUpdater,DIRECT'
+  - 'DOMAIN-SUFFIX,doubao.com,DIRECT'
+  - 'DOMAIN-SUFFIX,snssdk.com,DIRECT'
+  - 'DOMAIN-SUFFIX,isnssdk.com,DIRECT'
+  - 'DOMAIN-SUFFIX,byteimg.com,DIRECT'
+  - 'DOMAIN-SUFFIX,ibyteimg.com,DIRECT'
+  - 'DOMAIN-SUFFIX,bytescm.com,DIRECT'
+  - 'DOMAIN-SUFFIX,bytetcc.com,DIRECT'
+  - 'DOMAIN-SUFFIX,ibytedapm.com,DIRECT'
+  - 'DOMAIN-SUFFIX,zijieapi.com,DIRECT'
+  - 'DOMAIN-SUFFIX,volces.com,DIRECT'
+  - 'DOMAIN-SUFFIX,bytedanceapi.com,DIRECT'
+  - 'DOMAIN-SUFFIX,typeless.com,DIRECT'
+  - 'DOMAIN-SUFFIX,typeless-static.com,DIRECT'
+
+  # ── App Store ───────────────────────────────────────────────────
+  # 走代理时 App Store 下载/校验异常，全部直连。
+  - 'PROCESS-NAME,App Store,DIRECT'
+  - 'PROCESS-NAME,appstored,DIRECT'
+  - 'PROCESS-NAME,storeaccountd,DIRECT'
+  - 'PROCESS-NAME,storedownloadd,DIRECT'
+  - 'PROCESS-NAME,storeassetd,DIRECT'
+  - 'GEOSITE,apple,DIRECT'
+
+append: []
+delete: []
