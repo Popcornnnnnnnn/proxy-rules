@@ -14,9 +14,13 @@ function main(config, profileName) {
   // 优先排在最前的规则，按数组顺序生效。
   const prependRules = [
     // ── Steam ───────────────────────────────────────────────────
-    // 商店、认证、内容、CM 连接必须走同一条出口，否则一次会话被拆到
-    // DIRECT 和 PROXY 两边，登录会失败。必须排在订阅的
-    // category-games@cn DIRECT 规则之前。
+    // 住宅代理出口对这两个 SNI 会直接重置 TLS（同一节点上 store / login /
+    // community 都正常），Steam 因此取不到 CM 列表，一直卡在重连循环。
+    // 两者直连实测可用，所以必须排在下面的 steampowered.com PROXY 之前。
+    "DOMAIN,api.steampowered.com,DIRECT",
+    "DOMAIN,checkout.steampowered.com,DIRECT",
+    // 其余 Steam 域名保持走代理：community 在国内直连不通，
+    // 因此必须排在订阅的 category-games@cn DIRECT 规则之前。
     "DOMAIN-SUFFIX,steampowered.com,PROXY",
     "DOMAIN-SUFFIX,steamcommunity.com,PROXY",
     "DOMAIN-SUFFIX,steamstatic.com,PROXY",

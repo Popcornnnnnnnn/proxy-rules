@@ -4,6 +4,13 @@
 # prepend 里的规则永远插在订阅自带规则之前，因此订阅更新不会冲掉它们。
 
 prepend:
+  # ── Steam ───────────────────────────────────────────────────────
+  # 住宅代理出口对这两个 SNI 会直接重置 TLS（同一节点上 store / login /
+  # community 都正常），Steam 因此取不到 CM 列表，卡在重连循环。
+  # 两者直连实测可用，必须排在 steampowered.com 的 PROXY 规则之前。
+  - 'DOMAIN,api.steampowered.com,DIRECT'
+  - 'DOMAIN,checkout.steampowered.com,DIRECT'
+
   # ── Gmail 邮件端口 ──────────────────────────────────────────────
   # 住宅代理线路会丢弃 Gmail 的邮件端口（993/465/587/995），
   # 表现为 Mail.app 弹 "SSL error"。这几个域名直连可通，故走 DIRECT。
