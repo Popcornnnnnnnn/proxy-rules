@@ -23,6 +23,15 @@ prepend:
   # 结果 TLS 被重置，因此强制走节点。
   - 'DOMAIN-SUFFIX,ndhixj.cn,PROXY'
 
+  # ── Siri / Apple Intelligence ───────────────────────────────────
+  # 只让 Apple 官方列出的 Siri、搜索和私有云计算主机走代理。
+  - 'DOMAIN,guzzoni.apple.com,PROXY'
+  - 'DOMAIN-SUFFIX,smoot.apple.com,PROXY'
+  - 'DOMAIN,apple-relay.cloudflare.com,PROXY'
+  - 'DOMAIN,apple-relay.fastly-edge.com,PROXY'
+  - 'DOMAIN,cp4.cloudflare.com,PROXY'
+  - 'DOMAIN,apple-relay.apple.com,PROXY'
+
   # ── 网易云音乐 ──────────────────────────────────────────────────
   # 含 Helper 进程的媒体下载，全部走直连，不受订阅规则影响。
   - 'PROCESS-NAME,NeteaseMusic,DIRECT'
