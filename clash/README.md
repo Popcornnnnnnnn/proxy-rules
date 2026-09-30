@@ -5,17 +5,21 @@ Clash Meta（Redmi 安卓机）。
 
 思路和 MacBook Pro 上现在这套完全一样：**订阅照旧，规则用本仓库这份覆写挂上去**。
 
-## 各端的 URL
+## 各端怎么接
 
-**Clash Verge（另一台 Mac）** — 用「规则覆写」：
+**Clash Verge（另一台 Mac）** — 用「规则覆写」，但**只能粘贴内容，不能填 URL**：
 
-```
-https://cdn.jsdelivr.net/gh/Popcornnnnnnnn/proxy-rules@main/clash/rules.yaml
-```
+1. 订阅卡片右键 → **编辑规则**
+2. 把本仓库 `clash/rules.yaml` 的**内容**整个粘进文本框 → 保存
+3. 点一下订阅卡片（或重启 App）让它重新应用一次，规则才生效
 
-做法：订阅卡片右键 → **编辑规则** → 选「远程」/「URL」→ 填上面的地址 → 保存。
-（脚本覆写 `rules.js` 同理，在「编辑脚本」里填：
-`https://cdn.jsdelivr.net/gh/Popcornnnnnnnn/proxy-rules@main/clash/rules.js`）
+脚本覆写 `rules.js` 同理：右键 → **扩展脚本** → 粘贴内容 → 保存。
+
+> ⚠️ Clash Verge 的覆写**只吃本地文件，没有「远程 / URL」选项**，别去找地址填。
+> 已对着 2.5.6 源码核过：右键菜单里只有「编辑规则/编辑节点/编辑代理组/
+> 扩展覆写配置/扩展脚本」，点开都是本地文本框；后端 `enhance/chain.rs`
+> 只按「profiles 目录 + 文件名」读磁盘，文件不存在就直接跳过，全程不发网络请求。
+> 所以仓库改了之后**得重新粘贴一次**（不能靠订阅更新自动拉）。
 
 **Clash for Windows** — 用「Merge / 覆写」：
 
@@ -23,17 +27,34 @@ https://cdn.jsdelivr.net/gh/Popcornnnnnnnn/proxy-rules@main/clash/rules.yaml
 2. 选 **Remote**，填 `clash/rules.yaml` 那个 URL
 3. 保存后点一下订阅卡片重新生成配置
 
-**Clash Meta（Redmi）** — 用「覆写 / Override」：
+**Clash Meta（Redmi）** — **不能用「覆写 / Override」**：
 
-1. 配置页 → 你的订阅 → **覆写** / **Override**
-2. 添加一条 **Rule Override**，类型选远程 URL，填 `clash/rules.yaml` 那个地址
+它设置里的 Override 只管全局设置项（端口、DNS、ipv6、mode 等），
+源码里的 `ConfigurationOverride` **没有 `rules` 字段**，所以挂不了规则覆写。
+它吃规则的唯一入口是**完整配置文件**，用 `build-android.py` 在本机生成：
+
+```sh
+python3 build-android.py      # 输出 android/config.yaml
+```
+
+生成的配置**含节点信息**，已在 `.gitignore` 排除，不要提交。详见 `android/README.md`。
 
 ## 以后规则改了怎么更新
 
-不用做任何操作。各客户端在**更新订阅**时会重新生成配置，
-这时会去拉一次覆写 URL，拿到最新规则。
+**分两种，别搞混：**
 
-想立刻生效就手动点一次「更新订阅」。
+- **填 URL 的端（Clash for Windows、Shadowrocket）** —— 不用做任何操作。
+  更新订阅时会重新生成配置，顺手拉到最新规则；想立刻生效就手动点一次「更新订阅」。
+- **两台 Mac 的 Clash Verge（填的是内容）** —— **不会自动更新**。
+  仓库改了之后要重新粘贴一次，或在本机跑一遍同步：
+
+  ```sh
+  cd /path/to/proxy-rules && git pull
+  # 覆写文件名以本机 profiles 目录里的为准（本机是 rRHqhlQYiQBo.yaml）
+  cp clash/rules.yaml "$HOME/Library/Application Support/io.github.clash-verge-rev.clash-verge-rev/profiles/rRHqhlQYiQBo.yaml"
+  ```
+
+  改完还要回 Clash Verge **点一下订阅卡片重新应用**——只改文件不会热加载。
 
 ## 需要留意的
 
