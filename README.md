@@ -34,11 +34,11 @@ https://cdn.jsdelivr.net/gh/Popcornnnnnnnn/proxy-rules@main/<文件路径>
 
 这些是当前文件中的实际规则，不能假定是有意设计；修改时应逐项核对目标设备：
 
-| 流量 | Mac 的 Clash Verge | iPhone 的 Shadowrocket | Redmi 生成配置 |
+| 流量 | Mac 的 Clash Verge | Windows / Redmi（仅 `rules.yaml`） | iPhone 的 Shadowrocket |
 | --- | --- | --- | --- |
 | Steam API / 结算主机 | `DIRECT` | `DIRECT` | `DIRECT` |
-| 其他部分 Steam 域名 | `rules.js` 中强制 `PROXY` | 若干域名在 `.conf` 中为 `DIRECT` | 不读取 `rules.js`，交由订阅规则决定 |
-| `featureassets.org` | `rules.js` 中为 `DIRECT` | `🤖AI美国节点` | 不读取 `rules.js`，交由订阅规则决定 |
+| 其他部分 Steam 域名 | `rules.js` 中强制 `PROXY` | 交由订阅规则决定 | 若干域名在 `.conf` 中为 `DIRECT` |
+| `featureassets.org` | `rules.js` 中为 `DIRECT` | 交由订阅规则决定 | `🤖AI美国节点` |
 
 公开仓库只保证各端能取得相应规则文件；设备实际生效还需在客户端重新应用并核验。
 
