@@ -2,4 +2,4 @@
 *.bak
 *备份*
 android/config.yaml
-build-android.py
+android/subscription-url.txt

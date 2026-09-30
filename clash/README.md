@@ -43,8 +43,8 @@ python3 build-android.py      # 输出 android/config.yaml
 
 **分两种，别搞混：**
 
-- **填 URL 的端（Clash for Windows、Shadowrocket）** —— 不用做任何操作。
-  更新订阅时会重新生成配置，顺手拉到最新规则；想立刻生效就手动点一次「更新订阅」。
+- **填 URL 的端（Clash for Windows、Shadowrocket）** —— 仍需在客户端更新并重新
+  应用配置；GitHub 推送本身不能证明运行中的规则已变化。
 - **两台 Mac 的 Clash Verge（填的是内容）** —— **不会自动更新**。
   仓库改了之后要重新粘贴一次，或在本机跑一遍同步：
 
@@ -60,7 +60,7 @@ python3 build-android.py      # 输出 android/config.yaml
 
 - 本仓库的覆写**只包含规则**，不含节点。所以每台设备仍然要各自填 `ckip.uk` 订阅地址。
 - `rules.yaml` 里用的是 `prepend`，规则插在订阅自带规则之前，订阅更新不会冲掉。
-- `rules.js` 里有个 `PROCESS-NAME,Texas Poker,DIRECT` 之类的**进程规则**，
-  只在桌面端有意义（手机上没有进程概念，会被忽略，无害）。
+- `rules.js` 是 Clash Verge 的脚本覆写。Android 生成器不会运行它；
+  `rules.yaml` 中的 `PROCESS-NAME` 在 Android 上可能匹配包名，须按设备核对。
 - 覆写里引用了 `GEOSITE,apple` 和 `PROXY` 这个策略组名，
   要求订阅里存在名为 `PROXY` 的组——你现在的 `ckip.uk` 订阅满足这点。

@@ -57,7 +57,7 @@ function main(config, profileName) {
     "DOMAIN,pan.baidu.com,PROXY",
   ];
 
-  // 进程级规则：只在这些客户端有效（桌面端）。手机端会忽略。
+  // Clash Verge 上的进程级规则；Android 生成器不读取此脚本。
   const processRules = [
     // KamaGames Texas Poker 用私有协议连裸 IP 游戏服务器，
     // 走住宅代理会断，整个进程直连。
