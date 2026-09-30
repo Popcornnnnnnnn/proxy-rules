@@ -23,8 +23,8 @@ python3 build-android.py
 ```
 
 生成的 `config.yaml` **含节点信息**，已在 `.gitignore` 排除，不要提交。
-脚本会将其权限设为 `600`。生成器只合并 `clash/rules.yaml` 的 `prepend`，
-不会运行 `clash/rules.js`；检查两者差异后再导入手机。
+脚本会将其权限设为 `600`。生成器合并 `clash/rules.yaml` 的 `prepend`；
+导入前检查其中的进程名称在 Android 上是否有对应包名。
 
 然后把该完整配置传到红米，在 Clash Meta for Android 中导入并选中。
 以后每次规则或订阅变化，都需要重新生成、传送和应用。

@@ -13,7 +13,8 @@ Clash Meta（Redmi 安卓机）。
 2. 把本仓库 `clash/rules.yaml` 的**内容**整个粘进文本框 → 保存
 3. 点一下订阅卡片（或重启 App）让它重新应用一次，规则才生效
 
-脚本覆写 `rules.js` 同理：右键 → **扩展脚本** → 粘贴内容 → 保存。
+若以前给这个订阅启用了含分流规则的**扩展脚本**，还需停用其中的规则，
+否则脚本可能覆盖 `rules.yaml` 的顺序。本机旧脚本规则已迁入 YAML。
 
 > ⚠️ Clash Verge 的覆写**只吃本地文件，没有「远程 / URL」选项**，别去找地址填。
 > 已对着 2.5.6 源码核过：右键菜单里只有「编辑规则/编辑节点/编辑代理组/
@@ -60,7 +61,7 @@ python3 build-android.py      # 输出 android/config.yaml
 
 - 本仓库的覆写**只包含规则**，不含节点。所以每台设备仍然要各自填 `ckip.uk` 订阅地址。
 - `rules.yaml` 里用的是 `prepend`，规则插在订阅自带规则之前，订阅更新不会冲掉。
-- `rules.js` 是 Clash Verge 的脚本覆写。Android 生成器不会运行它；
-  `rules.yaml` 中的 `PROCESS-NAME` 在 Android 上可能匹配包名，须按设备核对。
+- 分流规则只在 `rules.yaml` 维护；其中的 `PROCESS-NAME` 在 Android 上可能匹配包名，
+  须按设备核对具体名称。
 - 覆写里引用了 `GEOSITE,apple` 和 `PROXY` 这个策略组名，
   要求订阅里存在名为 `PROXY` 的组——你现在的 `ckip.uk` 订阅满足这点。

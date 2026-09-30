@@ -8,7 +8,7 @@
 
 | 目录 | 用途 | 适用客户端 |
 | --- | --- | --- |
-| `clash/` | Clash 规则编辑器内容和脚本 | Clash Verge、Clash for Windows；Android 生成器只读取 `rules.yaml` |
+| `clash/` | 唯一编辑的 Clash 分流规则 `rules.yaml` | Clash Verge、Clash for Windows、Android 生成器 |
 | `shadowrocket/` | Shadowrocket 配置片段 | iPhone / iPad 上的 Shadowrocket |
 | `build-android.py` | 合成含节点的完整配置，订阅地址从本机私有文件读取 | Clash Meta for Android |
 
@@ -18,7 +18,7 @@
 
 ```sh
 cd ~/Documents/Codex/2026-09-24/zhe-2/work/proxy-rules
-# 编辑 clash/ 或 shadowrocket/ 下的文件
+# Clash 分流规则只编辑 clash/rules.yaml；iPhone 配置目前仍单独维护
 git add -A && git commit -m "更新规则：xxx" && git push
 ```
 
@@ -32,13 +32,13 @@ https://cdn.jsdelivr.net/gh/Popcornnnnnnnn/proxy-rules@main/<文件路径>
 
 ## 当前各端差异
 
-这些是当前文件中的实际规则，不能假定是有意设计；修改时应逐项核对目标设备：
+以下比较的是仓库文件，不能据此断言每台设备已经更新或正在使用这些规则：
 
-| 流量 | Mac 的 Clash Verge | Windows / Redmi（仅 `rules.yaml`） | iPhone 的 Shadowrocket |
-| --- | --- | --- | --- |
-| Steam API / 结算主机 | `DIRECT` | `DIRECT` | `DIRECT` |
-| 其他部分 Steam 域名 | `rules.js` 中强制 `PROXY` | 交由订阅规则决定 | 若干域名在 `.conf` 中为 `DIRECT` |
-| `featureassets.org` | `rules.js` 中为 `DIRECT` | 交由订阅规则决定 | `🤖AI美国节点` |
+| 流量 | Clash `rules.yaml` | iPhone 的 Shadowrocket `.conf` |
+| --- | --- | --- |
+| Steam API / 结算主机 | `DIRECT` | `DIRECT` |
+| 其他部分 Steam 域名 | 强制 `PROXY` | 若干域名为 `DIRECT` |
+| `featureassets.org` | `DIRECT` | `🤖AI美国节点` |
 
 公开仓库只保证各端能取得相应规则文件；设备实际生效还需在客户端重新应用并核验。
 

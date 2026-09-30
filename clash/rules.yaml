@@ -10,6 +10,43 @@ prepend:
   # 两者直连实测可用，必须排在 steampowered.com 的 PROXY 规则之前。
   - 'DOMAIN,api.steampowered.com,DIRECT'
   - 'DOMAIN,checkout.steampowered.com,DIRECT'
+  # 其余 Steam 域名保持代理，避开订阅中靠后的 games@cn 直连规则。
+  - 'DOMAIN-SUFFIX,steampowered.com,PROXY'
+  - 'DOMAIN-SUFFIX,steamcommunity.com,PROXY'
+  - 'DOMAIN-SUFFIX,steamstatic.com,PROXY'
+  - 'DOMAIN-SUFFIX,steamserver.net,PROXY'
+  - 'DOMAIN-SUFFIX,steamcontent.com,PROXY'
+  - 'DOMAIN-SUFFIX,steamusercontent.com,PROXY'
+  - 'DOMAIN-SUFFIX,steam-chat.com,PROXY'
+  - 'DOMAIN-SUFFIX,steamgames.com,PROXY'
+  - 'DOMAIN-SUFFIX,steam.tv,PROXY'
+  - 'DOMAIN-SUFFIX,steamcdn-a.akamaihd.net,PROXY'
+  - 'DOMAIN-SUFFIX,steamstore-a.akamaihd.net,PROXY'
+
+  # ── Epic / hCaptcha ─────────────────────────────────────────────
+  # 认证和 CAPTCHA 依赖同一条直连路径，避免验证初始化失败。
+  - 'DOMAIN-SUFFIX,epicgames.com,DIRECT'
+  - 'DOMAIN-SUFFIX,epicgames.dev,DIRECT'
+  - 'DOMAIN-SUFFIX,unrealengine.com,DIRECT'
+  - 'DOMAIN-SUFFIX,hcaptcha.com,DIRECT'
+  - 'DOMAIN-SUFFIX,featureassets.org,DIRECT'
+  - 'DOMAIN-SUFFIX,prodregistryv2.org,DIRECT'
+
+  # ── WorkBuddy / CodeBuddy ───────────────────────────────────────
+  # 登录、遥测和插件市场走代理曾超时；只覆盖这些产品域名。
+  - 'DOMAIN-SUFFIX,workbuddy.ai,DIRECT'
+  - 'DOMAIN-SUFFIX,workbuddy.cn,DIRECT'
+  - 'DOMAIN-SUFFIX,codebuddy.ai,DIRECT'
+  - 'DOMAIN-SUFFIX,tgalileo.com,DIRECT'
+  - 'DOMAIN-SUFFIX,cnb.cool,DIRECT'
+
+  # ── 百度网盘 ────────────────────────────────────────────────────
+  # 登录主机直连超时、代理可达，只覆盖这个主机。
+  - 'DOMAIN,pan.baidu.com,PROXY'
+
+  # ── Texas Poker ────────────────────────────────────────────────
+  # 桌面游戏连接裸 IP 服务器时，住宅代理会断，按进程直连。
+  - 'PROCESS-NAME,Texas Poker,DIRECT'
 
   # ── Gmail 邮件端口 ──────────────────────────────────────────────
   # 住宅代理线路会丢弃 Gmail 的邮件端口（993/465/587/995），
