@@ -10,11 +10,12 @@ prepend:
   # 两者直连实测可用，必须排在 steampowered.com 的 PROXY 规则之前。
   - 'DOMAIN,api.steampowered.com,DIRECT'
   - 'DOMAIN,checkout.steampowered.com,DIRECT'
-  # 其余 Steam 域名保持代理，避开订阅中靠后的 games@cn 直连规则。
+  # 商店、社区等网页保持代理；登录服务器走直连。
+  # 当前住宅代理的 Steam 270xx 端口实测失败，直连可通。
   - 'DOMAIN-SUFFIX,steampowered.com,PROXY'
   - 'DOMAIN-SUFFIX,steamcommunity.com,PROXY'
   - 'DOMAIN-SUFFIX,steamstatic.com,PROXY'
-  - 'DOMAIN-SUFFIX,steamserver.net,PROXY'
+  - 'DOMAIN-SUFFIX,steamserver.net,DIRECT'
   - 'DOMAIN-SUFFIX,steamcontent.com,PROXY'
   - 'DOMAIN-SUFFIX,steamusercontent.com,PROXY'
   - 'DOMAIN-SUFFIX,steam-chat.com,PROXY'
