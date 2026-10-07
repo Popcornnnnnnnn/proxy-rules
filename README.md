@@ -17,7 +17,7 @@
 只在这一台 MacBook Pro 上改，然后推送：
 
 ```sh
-cd ~/Documents/Codex/2026-09-24/zhe-2/work/proxy-rules
+cd /path/to/proxy-rules
 # Clash 分流规则只编辑 clash/rules.yaml；iPhone 配置目前仍单独维护
 git add -A && git commit -m "更新规则：xxx" && git push
 ```
@@ -29,6 +29,23 @@ Windows 和 iPhone 可以从下面的 URL 获取公开规则文件，更新后�
 ```
 https://cdn.jsdelivr.net/gh/Popcornnnnnnnn/proxy-rules@main/<文件路径>
 ```
+
+## 本机 Mac 同步（手动）
+
+```sh
+cd /path/to/proxy-rules
+git pull --ff-only
+python3 sync-mac.py --check  # 只验证
+python3 sync-mac.py          # 合并、备份、校验并重新加载
+```
+
+脚本针对当前 Mac 的 Clash Verge Rev 全局脚本结构；保留代理组、DNS 和 TUN
+设置，并增加通用 `PROXY` 策略组。公开规则优先，本机已有的 AI 美国节点选择
+继续保留；公司、内网等本机例外存在 Clash 的 `profiles/codex-local-rules.json`，
+不上传 GitHub。首次运行会从旧脚本和当前规则覆写中提取本机例外。
+
+运行前校验 JavaScript 和 mihomo 配置；写入前备份到 Clash 的 `backups-codex`，
+重新加载失败会恢复旧文件。此命令不创建定时任务，其他设备仍需各自更新。
 
 ## 当前各端差异
 

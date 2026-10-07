@@ -3,3 +3,6 @@
 *备份*
 android/config.yaml
 android/subscription-url.txt
+
+__pycache__/
+*.pyc

@@ -50,12 +50,15 @@ python3 build-android.py      # 输出 android/config.yaml
   仓库改了之后要重新粘贴一次，或在本机跑一遍同步：
 
   ```sh
-  cd /path/to/proxy-rules && git pull
-  # 覆写文件名以本机 profiles 目录里的为准（本机是 rRHqhlQYiQBo.yaml）
-  cp clash/rules.yaml "$HOME/Library/Application Support/io.github.clash-verge-rev.clash-verge-rev/profiles/rRHqhlQYiQBo.yaml"
+  cd /path/to/proxy-rules
+  git pull --ff-only
+  python3 sync-mac.py --check
+  python3 sync-mac.py
   ```
 
-  改完还要回 Clash Verge **点一下订阅卡片重新应用**——只改文件不会热加载。
+  此脚本适用于本机当前的全局脚本布局，保留本机代理组和 AI 美国节点选择，
+  写入当前订阅对应的覆写，并重新加载运行配置；其他 Mac 不要直接照搬文件名。
+  若采用手工粘贴，仍需点一下订阅卡片重新应用。
 
 ## 需要留意的
 
