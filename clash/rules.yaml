@@ -4,6 +4,9 @@
 # prepend 里的规则永远插在订阅自带规则之前，因此订阅更新不会冲掉它们。
 
 prepend:
+  # HyperFrames 官网与登录：当前住宅代理超时，直连已验证可用。
+  - 'DOMAIN-SUFFIX,hyperframes.dev,DIRECT'
+
   # ── Steam ───────────────────────────────────────────────────────
   # 住宅代理出口对这两个 SNI 会直接重置 TLS（同一节点上 store / login /
   # community 都正常），Steam 因此取不到 CM 列表，卡在重连循环。
