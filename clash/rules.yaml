@@ -4,6 +4,9 @@
 # prepend 里的规则永远插在订阅自带规则之前，因此订阅更新不会冲掉它们。
 
 prepend:
+  # AssemblyAI signup: both residential routes time out; DIRECT probe succeeds.
+  - 'DOMAIN,www.assemblyai.com,DIRECT'
+
   # HyperFrames 官网与登录：当前住宅代理超时，直连已验证可用。
   - 'DOMAIN-SUFFIX,hyperframes.dev,DIRECT'
 
