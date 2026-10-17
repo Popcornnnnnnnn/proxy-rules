@@ -1,53 +1,61 @@
-# Mac / Windows / Android（Clash 系）怎么接
+# How to connect Mac / Windows / Android (Clash family)
 
-适用：Clash Verge（另一台 Mac）、Clash for Windows（两台 Windows）、
-Clash Meta（Redmi 安卓机）。
+Applies to: Clash Verge (the other Mac), Clash for Windows (two Windows machines),
+Clash Meta (the Redmi Android phone).
 
-思路和 MacBook Pro 上现在这套完全一样：**订阅照旧，规则用本仓库这份覆写挂上去**。
+The approach is exactly the same as what runs on this MacBook Pro: **keep the
+subscription as is and attach this repository's rules as an override.**
 
-## 各端怎么接
+## Connecting each client
 
-**Clash Verge（另一台 Mac）** — 用「规则覆写」，但**只能粘贴内容，不能填 URL**：
+**Clash Verge (the other Mac)** — use 「规则覆写」 (Rules override), but it **only accepts pasted content, not a URL**:
 
-1. 订阅卡片右键 → **编辑规则**
-2. 把本仓库 `clash/rules.yaml` 的**内容**整个粘进文本框 → 保存
-3. 点一下订阅卡片（或重启 App）让它重新应用一次，规则才生效
+1. Right-click the subscription card → **编辑规则** (Edit Rules)
+2. Paste the entire **contents** of this repository's `clash/rules.yaml` into the text box → save
+3. Click the subscription card (or restart the app) so it re-applies once; only then do the rules take effect
 
-若以前给这个订阅启用了含分流规则的**扩展脚本**，还需停用其中的规则，
-否则脚本可能覆盖 `rules.yaml` 的顺序。本机旧脚本规则已迁入 YAML。
+If you previously enabled an **extension script** containing routing rules for this
+subscription, disable the rules in it too, otherwise the script may override the order in
+`rules.yaml`. On this machine the old script's rules have been migrated into the YAML.
 
-> ⚠️ Clash Verge 的覆写**只吃本地文件，没有「远程 / URL」选项**，别去找地址填。
-> 已对着 2.5.6 源码核过：右键菜单里只有「编辑规则/编辑节点/编辑代理组/
-> 扩展覆写配置/扩展脚本」，点开都是本地文本框；后端 `enhance/chain.rs`
-> 只按「profiles 目录 + 文件名」读磁盘，文件不存在就直接跳过，全程不发网络请求。
-> 所以仓库改了之后**得重新粘贴一次**（不能靠订阅更新自动拉）。
+> ⚠️ Clash Verge's override **only reads local files and has no "remote / URL" option**, so
+> don't go looking for an address to fill in. Verified against the 2.5.6 source: the
+> right-click menu has only 「编辑规则/编辑节点/编辑代理组/扩展覆写配置/扩展脚本」, all of which
+> open local text boxes; the backend `enhance/chain.rs` reads from disk by "profiles
+> directory + file name" only, skips missing files, and makes no network requests at all.
+> So after the repository changes you **must paste it again** (a subscription update will
+> not pull it automatically).
 
-**Clash for Windows** — 用「Merge / 覆写」：
+**Clash for Windows** — use "Merge / override":
 
-1. Profiles 页，订阅卡片右键 → **Edit File** 旁边的 **Merge**（或 Parsers）
-2. 选 **Remote**，填 `clash/rules.yaml` 那个 URL
-3. 保存后点一下订阅卡片重新生成配置
+1. On the Profiles page, right-click the subscription card → **Merge** next to **Edit File** (or Parsers)
+2. Choose **Remote** and enter the URL of `clash/rules.yaml`
+3. After saving, click the subscription card to regenerate the configuration
 
-**Clash Meta（Redmi）** — **不能用「覆写 / Override」**：
+**Clash Meta (Redmi)** — **cannot use "override"**:
 
-它设置里的 Override 只管全局设置项（端口、DNS、ipv6、mode 等），
-源码里的 `ConfigurationOverride` **没有 `rules` 字段**，所以挂不了规则覆写。
-它吃规则的唯一入口是**完整配置文件**，用 `build-android.py` 在本机生成：
+Its Override setting only covers global options (port, DNS, ipv6, mode, and so on); the
+`ConfigurationOverride` in its source **has no `rules` field**, so rules cannot be attached
+as an override. The only way it takes rules is a **complete configuration file**, generated
+on this machine with `build-android.py`:
 
 ```sh
-python3 build-android.py      # 输出 android/config.yaml
+python3 build-android.py      # writes android/config.yaml
 ```
 
-生成的配置**含节点信息**，已在 `.gitignore` 排除，不要提交。详见 `android/README.md`。
+The generated configuration **contains node information**, is excluded by `.gitignore`,
+and must not be committed. See `android/README.md` for details.
 
-## 以后规则改了怎么更新
+## Updating after rule changes
 
-**分两种，别搞混：**
+**Two cases — don't mix them up:**
 
-- **填 URL 的端（Clash for Windows、Shadowrocket）** —— 仍需在客户端更新并重新
-  应用配置；GitHub 推送本身不能证明运行中的规则已变化。
-- **两台 Mac 的 Clash Verge（填的是内容）** —— **不会自动更新**。
-  仓库改了之后要重新粘贴一次，或在本机跑一遍同步：
+- **Clients that take a URL (Clash for Windows, Shadowrocket)** — the configuration still
+  has to be updated and re-applied in the client; a GitHub push by itself does not prove
+  that the running rules changed.
+- **Clash Verge on the two Macs (which takes pasted content)** — **does not update
+  automatically.** After the repository changes, paste it again, or run the sync on this
+  machine:
 
   ```sh
   cd /path/to/proxy-rules
@@ -56,15 +64,20 @@ python3 build-android.py      # 输出 android/config.yaml
   python3 sync-mac.py
   ```
 
-  此脚本适用于本机当前的全局脚本布局，保留本机代理组和 AI 美国节点选择，
-  写入当前订阅对应的覆写，并重新加载运行配置；其他 Mac 不要直接照搬文件名。
-  若采用手工粘贴，仍需点一下订阅卡片重新应用。
+  This script targets the current global-script layout on this machine, preserves the local
+  proxy groups and the AI US node selection, writes the override for the current
+  subscription, and reloads the running configuration; other Macs should not copy the file
+  name blindly. If you paste manually instead, you still need to click the subscription
+  card to re-apply.
 
-## 需要留意的
+## Things to watch
 
-- 本仓库的覆写**只包含规则**，不含节点。所以每台设备仍然要各自填 `ckip.uk` 订阅地址。
-- `rules.yaml` 里用的是 `prepend`，规则插在订阅自带规则之前，订阅更新不会冲掉。
-- 分流规则只在 `rules.yaml` 维护；其中的 `PROCESS-NAME` 在 Android 上可能匹配包名，
-  须按设备核对具体名称。
-- 覆写里引用了 `GEOSITE,apple` 和 `PROXY` 这个策略组名，
-  要求订阅里存在名为 `PROXY` 的组——你现在的 `ckip.uk` 订阅满足这点。
+- The override in this repository **contains rules only**, no nodes. So every device still
+  has to fill in its own `ckip.uk` subscription URL.
+- `rules.yaml` uses `prepend`, so the rules are inserted before the subscription's own
+  rules and a subscription update will not wipe them.
+- Routing rules are maintained only in `rules.yaml`; its `PROCESS-NAME` entries may match
+  package names on Android, so check the actual names per device.
+- The override references `GEOSITE,apple` and the policy group name `PROXY`, so the
+  subscription must contain a group named `PROXY` — your current `ckip.uk` subscription
+  satisfies this.

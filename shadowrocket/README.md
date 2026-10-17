@@ -1,40 +1,42 @@
-# iPhone / iPad（Shadowrocket）怎么接
+# How to connect iPhone / iPad (Shadowrocket)
 
-Shadowrocket 的「节点订阅」和「配置」是两个独立的东西：
+Shadowrocket's "node subscription" and "configuration" are two separate things:
 
-- **节点订阅**：还是你自己的 `ckip.uk` 那条，不用改
-- **配置**：规则和策略组，用本仓库这份
+- **Node subscription**: still your own `ckip.uk` one, no change needed
+- **Configuration**: rules and policy groups, from this repository
 
-## 第一次配置
+## First-time setup
 
-1. 打开 Shadowrocket → 底部 **配置** 标签
-2. 右上角 **+** → 类型选 **URL**（或 "从 URL 下载"）
-3. URL 填：
+1. Open Shadowrocket → the **配置** (Config) tab at the bottom
+2. **+** in the top right → choose type **URL** (or "Download from URL")
+3. Enter the URL:
 
    ```
    https://cdn.jsdelivr.net/gh/Popcornnnnnnnn/proxy-rules@main/shadowrocket/shadowrocket.conf
    ```
 
-4. 保存后，**点一下这条配置让它打勾选中**（选中才会生效）
-5. 回到 **首页**，确认节点订阅已经导入（这一步是你原有的 `ckip.uk` 订阅）
-6. 打开首页顶部的开关
+4. After saving, **tap the configuration to select it** (it only takes effect when selected)
+5. Go back to the **首页** (Home) page and confirm the node subscription has been imported (this step is your existing `ckip.uk` subscription)
+6. Turn on the switch at the top of the Home page
 
-## 以后规则改了怎么更新
+## Updating after rule changes
 
-规则改动推送到 GitHub 后：
+After rule changes are pushed to GitHub:
 
-1. 打开 Shadowrocket → **配置**
-2. 向左滑动你的那条配置 → **更新**（或长按 → 更新）
-3. 更新完保持它处于「选中」状态
+1. Open Shadowrocket → **配置** (Config)
+2. Swipe left on your configuration → **更新** (Update) (or long-press → Update)
+3. Keep it selected afterwards
 
-也可以在配置列表下拉刷新；Shadowrocket 会在你打开 App 时自动检查。
+You can also pull to refresh in the configuration list; Shadowrocket checks automatically
+when you open the app.
 
-## 需要留意的
+## Things to watch
 
-- **策略组名字要能对上**：这份配置里 `🌏全球低延迟`、`🤖AI美国节点` 这些组，
-  靠 `policy-regex-filter` 从你的节点订阅里自动匹配节点名（比如带「美国」「US」的）。
-  如果你的订阅节点名变了导致匹配不到，组里会空，这时去 **配置 → 编辑** 里
-  看一下组的正则，或者直接在 App 里手动给组选节点。
-- **`ipv6 = true`**：Shadowrocket 里的 IPv6 和 Mac 上那个开关是两回事，
-  手机这份保持 `true` 没问题（真机流量走 Shadowrocket 自己的 TUN）。
-- 这份配置**不含任何节点信息**，所以放在公开仓库里是安全的。
+- **Policy group names must match**: groups such as `🌏全球低延迟` and `🤖AI美国节点` in this
+  configuration match node names from your node subscription automatically via
+  `policy-regex-filter` (for example names containing 「美国」 or `US`). If your subscription's
+  node names change and nothing matches, the group will be empty; then look at the group's
+  regex under **配置 → 编辑** (Config → Edit), or pick a node for the group manually in the app.
+- **`ipv6 = true`**: IPv6 in Shadowrocket is a different thing from that switch on the Mac;
+  keeping `true` for the phone is fine (real traffic goes through Shadowrocket's own TUN).
+- This configuration **contains no node information**, so it is safe in a public repository.
