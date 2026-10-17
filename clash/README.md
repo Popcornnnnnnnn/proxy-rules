@@ -48,13 +48,18 @@ and must not be committed. See `android/README.md` for details.
 
 ## Updating after rule changes
 
+**This MacBook Pro is the authoritative source**; the repository mirrors its rules for the
+other devices. So the usual direction is Mac → repository (publish with
+`sync-mac.py --export --write`, commit, push), and only a repository-only edit needs to be
+applied back to the Mac. See [AGENTS.md](../AGENTS.md) for the full workflow.
+
 **Two cases — don't mix them up:**
 
 - **Clients that take a URL (Clash for Windows, Shadowrocket)** — the configuration still
   has to be updated and re-applied in the client; a GitHub push by itself does not prove
   that the running rules changed.
 - **Clash Verge on the two Macs (which takes pasted content)** — **does not update
-  automatically.** After the repository changes, paste it again, or run the sync on this
+  automatically.** After a repository-only change, paste it again, or run the sync on this
   machine:
 
   ```sh

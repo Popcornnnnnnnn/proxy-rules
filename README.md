@@ -5,6 +5,10 @@ node subscription; this repository holds only rules and credential-free generati
 scripts — no nodes, subscription URLs, or keys. Each device's rule files are maintained
 separately and are currently not identical rule by rule.
 
+**This MacBook Pro is the authoritative source.** Rules are edited on it, and this
+repository mirrors them for the other devices. When the two disagree, the Mac is right and
+the repository is stale. The agent workflow is in [AGENTS.md](AGENTS.md).
+
 ## Layout
 
 | Directory | Purpose | Clients |
@@ -15,13 +19,19 @@ separately and are currently not identical rule by rule.
 
 ## How to make changes
 
-Edit only on this one MacBook Pro, then push:
+Rules are edited on this MacBook Pro (in Clash Verge's rules override), then published:
 
 ```sh
 cd /path/to/proxy-rules
+python3 sync-mac.py --export        # report the difference first
+python3 sync-mac.py --export --write
 # Clash routing rules are edited only in clash/rules.yaml; the iPhone configuration is still maintained separately
 git add -A && git commit -m "Update rules: xxx" && git push
 ```
+
+Editing `clash/rules.yaml` in the repository directly also works, but then this Mac has to
+be updated from it (`sync-mac.py`, see below) — the Mac is the source of truth, so a
+repository-only change is not yet in effect anywhere.
 
 Windows and iPhone can fetch the public rule files from the URL below; after an update
 the configuration must still be re-applied in the client. The other Mac uses a local
@@ -32,7 +42,9 @@ transferred manually; neither takes effect automatically from a GitHub push.
 https://cdn.jsdelivr.net/gh/Popcornnnnnnnn/proxy-rules@main/<file path>
 ```
 
-## Local Mac sync (manual)
+## Applying repository edits to this Mac (secondary)
+
+Only needed when `clash/rules.yaml` was edited in the repository instead of on the Mac:
 
 ```sh
 cd /path/to/proxy-rules
@@ -44,11 +56,9 @@ python3 sync-mac.py          # merge, back up, validate, and reload
 The script writes the merged rules into the Clash Verge Rev rules override referenced by
 the current profile (`profiles.yaml` → that profile's `rules` item). `Script.js` is left
 alone and keeps DNS fixes only. Public rules take precedence; local exceptions live in
-Clash's `profiles/codex-local-rules.json` and are not uploaded to GitHub. On the first run
-that file does not exist yet, so the local exception list is seeded from whatever the rules
-override currently prepends, and the AI-node remap list starts empty.
+Clash's `profiles/codex-local-rules.json` and are not uploaded to GitHub.
 
-The reverse direction exports what the Mac actually applies:
+## Publishing Mac changes to the repository (primary)
 
 ```sh
 python3 sync-mac.py --export          # report the difference only
@@ -59,10 +69,11 @@ python3 sync-mac.py --export --write  # rewrite clash/rules.yaml from the Mac
 `profiles/codex-local-rules.json`, reverses the AI-node remap, and compares the result with
 the repository. With `--write` it rewrites `clash/rules.yaml` in the Mac's order and keeps
 the comments attached to each rule; rules that exist only in the repository are dropped.
-Local exceptions are never published.
+Local exceptions are never published. Review the diff, commit, and push; then update the
+other devices.
 
-Before writing, it validates the merged rules with `mihomo -t`, refuses when a rule
-references a policy the running configuration does not define, backs up to Clash's
+Before writing, `sync-mac.py` validates the merged rules with `mihomo -t`, refuses when a
+rule references a policy the running configuration does not define, backs up to Clash's
 `backups-codex`, and restores the previous files if the reload fails. The reload goes
 through the Clash controller as a configuration payload, because the privileged service
 rejects file paths outside its own directory. This command does not create a scheduled
