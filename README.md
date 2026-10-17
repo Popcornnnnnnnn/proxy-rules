@@ -1,64 +1,73 @@
-# 我的分流规则（公开仓库，不含节点信息）
+# My routing rules (public repository, no node information)
 
-多端规则的公开编辑入口。各设备自行配置节点订阅；本仓库只存放规则和
-不含凭据的生成脚本，不包含节点、订阅地址或密钥。各端的规则文件需分别维护，
-当前并非逐条相同。
+The public editing entry point for multi-device rules. Each device configures its own
+node subscription; this repository holds only rules and credential-free generation
+scripts — no nodes, subscription URLs, or keys. Each device's rule files are maintained
+separately and are currently not identical rule by rule.
 
-## 目录
+## Layout
 
-| 目录 | 用途 | 适用客户端 |
+| Directory | Purpose | Clients |
 | --- | --- | --- |
-| `clash/` | 唯一编辑的 Clash 分流规则 `rules.yaml` | Clash Verge、Clash for Windows、Android 生成器 |
-| `shadowrocket/` | Shadowrocket 配置片段 | iPhone / iPad 上的 Shadowrocket |
-| `build-android.py` | 合成含节点的完整配置，订阅地址从本机私有文件读取 | Clash Meta for Android |
+| `clash/` | The only Clash routing rules file to edit, `rules.yaml` | Clash Verge, Clash for Windows, Android generator |
+| `shadowrocket/` | Shadowrocket configuration fragment | Shadowrocket on iPhone / iPad |
+| `build-android.py` | Builds a complete configuration including nodes; the subscription URL is read from a private local file | Clash Meta for Android |
 
-## 修改流程
+## How to make changes
 
-只在这一台 MacBook Pro 上改，然后推送：
+Edit only on this one MacBook Pro, then push:
 
 ```sh
 cd /path/to/proxy-rules
-# Clash 分流规则只编辑 clash/rules.yaml；iPhone 配置目前仍单独维护
-git add -A && git commit -m "更新规则：xxx" && git push
+# Clash routing rules are edited only in clash/rules.yaml; the iPhone configuration is still maintained separately
+git add -A && git commit -m "Update rules: xxx" && git push
 ```
 
-Windows 和 iPhone 可以从下面的 URL 获取公开规则文件，更新后仍需在客户端
-重新应用配置。另一台 Mac 使用本地覆写文件；Redmi 使用本机生成并传送的
-完整配置，都不会因为 GitHub 推送而自动生效。
+Windows and iPhone can fetch the public rule files from the URL below; after an update
+the configuration must still be re-applied in the client. The other Mac uses a local
+override file, and the Redmi uses a complete configuration generated on this machine and
+transferred manually; neither takes effect automatically from a GitHub push.
 
 ```
-https://cdn.jsdelivr.net/gh/Popcornnnnnnnn/proxy-rules@main/<文件路径>
+https://cdn.jsdelivr.net/gh/Popcornnnnnnnn/proxy-rules@main/<file path>
 ```
 
-## 本机 Mac 同步（手动）
+## Local Mac sync (manual)
 
 ```sh
 cd /path/to/proxy-rules
 git pull --ff-only
-python3 sync-mac.py --check  # 只验证
-python3 sync-mac.py          # 合并、备份、校验并重新加载
+python3 sync-mac.py --check  # validate only
+python3 sync-mac.py          # merge, back up, validate, and reload
 ```
 
-脚本针对当前 Mac 的 Clash Verge Rev 全局脚本结构；保留代理组、DNS 和 TUN
-设置，并增加通用 `PROXY` 策略组。公开规则优先，本机已有的 AI 美国节点选择
-继续保留；公司、内网等本机例外存在 Clash 的 `profiles/codex-local-rules.json`，
-不上传 GitHub。首次运行会从旧脚本和当前规则覆写中提取本机例外。
+The script targets the current Mac's Clash Verge Rev global script structure; it preserves
+proxy groups, DNS, and TUN settings, and adds a generic `PROXY` policy group. Public rules
+take precedence and the local AI US node selection is preserved; company and intranet
+exceptions live in Clash's `profiles/codex-local-rules.json` and are not uploaded to
+GitHub. The first run extracts local exceptions from the old script and the current rule
+override.
 
-运行前校验 JavaScript 和 mihomo 配置；写入前备份到 Clash 的 `backups-codex`，
-重新加载失败会恢复旧文件。此命令不创建定时任务，其他设备仍需各自更新。
+It validates the JavaScript and the mihomo configuration before writing, backs up to
+Clash's `backups-codex` before writing, and restores the old files if the reload fails.
+This command does not create a scheduled task, and other devices still need to be updated
+individually.
 
-## 当前各端差异
+## Current per-device differences
 
-以下比较的是仓库文件，不能据此断言每台设备已经更新或正在使用这些规则：
+The comparison below is of repository files; it does not establish that any device has
+updated or is using these rules:
 
-| 流量 | Clash `rules.yaml` | iPhone 的 Shadowrocket `.conf` |
+| Traffic | Clash `rules.yaml` | iPhone Shadowrocket `.conf` |
 | --- | --- | --- |
-| Steam API / 结算主机 | `DIRECT` | `DIRECT` |
-| 其他部分 Steam 域名 | 强制 `PROXY` | 若干域名为 `DIRECT` |
+| Steam API / checkout hosts | `DIRECT` | `DIRECT` |
+| Some other Steam domains | forced `PROXY` | several domains are `DIRECT` |
 | `featureassets.org` | `DIRECT` | `🤖AI美国节点` |
 
-公开仓库只保证各端能取得相应规则文件；设备实际生效还需在客户端重新应用并核验。
+The public repository only guarantees that each device can fetch the corresponding rule
+files; for a rule to actually take effect on a device, the configuration must be
+re-applied and verified in the client.
 
-## 各端怎么接
+## How to connect each device
 
-见各个子目录里的 README。
+See the README in each subdirectory.
