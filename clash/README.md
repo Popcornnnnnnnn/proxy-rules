@@ -64,11 +64,10 @@ and must not be committed. See `android/README.md` for details.
   python3 sync-mac.py
   ```
 
-  This script targets the current global-script layout on this machine, preserves the local
-  proxy groups and the AI US node selection, writes the override for the current
-  subscription, and reloads the running configuration; other Macs should not copy the file
-  name blindly. If you paste manually instead, you still need to click the subscription
-  card to re-apply.
+  This script writes the merged rules into the rules override referenced by the current
+  profile and reloads the running configuration; `Script.js` stays DNS-only. Other Macs
+  should not copy the file name blindly. If you paste manually instead, you still need to
+  click the subscription card to re-apply.
 
 ## Things to watch
 

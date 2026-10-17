@@ -41,17 +41,17 @@ python3 sync-mac.py --check  # validate only
 python3 sync-mac.py          # merge, back up, validate, and reload
 ```
 
-The script targets the current Mac's Clash Verge Rev global script structure; it preserves
-proxy groups, DNS, and TUN settings, and adds a generic `PROXY` policy group. Public rules
-take precedence and the local AI US node selection is preserved; company and intranet
-exceptions live in Clash's `profiles/codex-local-rules.json` and are not uploaded to
-GitHub. The first run extracts local exceptions from the old script and the current rule
-override.
+The script writes the merged rules into the Clash Verge Rev rules override referenced by
+the current profile (`profiles.yaml` → that profile's `rules` item). `Script.js` is left
+alone and keeps DNS fixes only. Public rules take precedence; local exceptions live in
+Clash's `profiles/codex-local-rules.json` and are not uploaded to GitHub. On the first run
+that file does not exist yet, so the local exception list is seeded from whatever the rules
+override currently prepends, and the AI-node remap list starts empty.
 
-It validates the JavaScript and the mihomo configuration before writing, backs up to
-Clash's `backups-codex` before writing, and restores the old files if the reload fails.
-This command does not create a scheduled task, and other devices still need to be updated
-individually.
+Before writing, it validates the merged rules with `mihomo -t`, refuses when a rule
+references a policy the running configuration does not define, backs up to Clash's
+`backups-codex`, and restores the previous files if the reload fails. This command does not
+create a scheduled task, and other devices still need to be updated individually.
 
 ## Current per-device differences
 
