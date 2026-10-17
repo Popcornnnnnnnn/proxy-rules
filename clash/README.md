@@ -67,7 +67,9 @@ and must not be committed. See `android/README.md` for details.
   This script writes the merged rules into the rules override referenced by the current
   profile and reloads the running configuration; `Script.js` stays DNS-only. Other Macs
   should not copy the file name blindly. If you paste manually instead, you still need to
-  click the subscription card to re-apply.
+  click the subscription card to re-apply. To take changes made on the Mac back into the
+  repository, run `python3 sync-mac.py --export` (report) or `--export --write` (rewrite
+  `clash/rules.yaml`); local exceptions are excluded.
 
 ## Things to watch
 

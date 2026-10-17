@@ -48,10 +48,25 @@ Clash's `profiles/codex-local-rules.json` and are not uploaded to GitHub. On the
 that file does not exist yet, so the local exception list is seeded from whatever the rules
 override currently prepends, and the AI-node remap list starts empty.
 
+The reverse direction exports what the Mac actually applies:
+
+```sh
+python3 sync-mac.py --export          # report the difference only
+python3 sync-mac.py --export --write  # rewrite clash/rules.yaml from the Mac
+```
+
+`--export` reads the Mac's rules override, excludes the local exceptions listed in
+`profiles/codex-local-rules.json`, reverses the AI-node remap, and compares the result with
+the repository. With `--write` it rewrites `clash/rules.yaml` in the Mac's order and keeps
+the comments attached to each rule; rules that exist only in the repository are dropped.
+Local exceptions are never published.
+
 Before writing, it validates the merged rules with `mihomo -t`, refuses when a rule
 references a policy the running configuration does not define, backs up to Clash's
-`backups-codex`, and restores the previous files if the reload fails. This command does not
-create a scheduled task, and other devices still need to be updated individually.
+`backups-codex`, and restores the previous files if the reload fails. The reload goes
+through the Clash controller as a configuration payload, because the privileged service
+rejects file paths outside its own directory. This command does not create a scheduled
+task, and other devices still need to be updated individually.
 
 ## Current per-device differences
 

@@ -1,10 +1,14 @@
 #!/usr/bin/env python3
-"""Merge public rules into this Mac's Clash Verge rules override and reload.
-Requires macOS Ruby and Clash Verge Rev. Private state stays outside Git.
+"""Sync routing rules between this Mac's Clash Verge Rev and the public repository.
 
-The Mac's Clash Verge Rev keeps Script.js for DNS fixes only; routing rules live in the
-"rules" enhancement item referenced by the current profile. This script writes the merged
-rules there, validates the result with mihomo, and reloads the running configuration.
+Default direction (repository -> Mac): merge clash/rules.yaml with the local exceptions,
+write the profile's rules override, validate with mihomo, and reload the running config.
+
+`--export` reports the other direction (Mac -> repository) and `--export --write` rewrites
+clash/rules.yaml from the Mac's rules override, excluding local exceptions and reversing
+the AI-node remap so nothing device-private or device-specific reaches the public repo.
+
+Requires macOS Ruby and Clash Verge Rev. Private state stays outside Git.
 """
 import argparse
 import json
@@ -70,11 +74,114 @@ def controller(config, path, body=None):
         return json.loads(raw) if raw else None
 
 
+def fragment_text(rules):
+    """Render the Clash Verge rules override in the same readable shape as the repo file."""
+    body = '\n'.join(f"  - '{r.replace(chr(39), chr(39) * 2)}'" for r in rules)
+    return f'{FRAGMENT_HEADER}\nprepend:\n{body}\n\nappend: []\n\ndelete: []\n'
+
+
+def repo_entries(path):
+    """Split clash/rules.yaml into (header, [(comments, rule)], tail, trailing comments)."""
+    header, entries, tail = [], [], []
+    comments, in_prepend, in_tail = [], False, False
+    for line in path.read_text().splitlines():
+        stripped = line.strip()
+        if in_tail:
+            tail.append(line)
+            continue
+        if not in_prepend:
+            header.append(line)
+            if stripped == 'prepend:':
+                in_prepend = True
+            continue
+        if stripped.startswith('- '):
+            rule = stripped[2:].strip()
+            if len(rule) > 1 and rule[0] == rule[-1] and rule[0] in "'\"":
+                rule = rule[1:-1]
+            entries.append((comments, rule))
+            comments = []
+        elif stripped.startswith('#') or not stripped:
+            comments.append(line)
+        else:
+            in_prepend, in_tail = False, True
+            tail.append(line)
+    return header, entries, tail, comments
+
+
+def export_rules(args):
+    """Report (and optionally write) the Mac's rules back into the repository."""
+    registry = read_yaml(STATE / 'profiles.yaml')
+    current = next(x for x in registry['items'] if x['uid'] == registry['current'])
+    rule_profile = next(x for x in registry['items'] if x['uid'] == current['option']['rules'])
+    rule_path = STATE / 'profiles' / rule_profile['file']
+    private_path = STATE / 'profiles/codex-local-rules.json'
+    private = (json.loads(private_path.read_text()) if private_path.exists()
+               else {'rules': [], 'ai_keys': []})
+    private_keys = {rule_key(r) for r in private.get('rules', [])}
+    ai_keys = set(private.get('ai_keys', []))
+
+    override = read_yaml(rule_path).get('prepend', [])
+    exported, skipped_private, remapped = [], 0, 0
+    for rule in override:
+        if rule_key(rule) in private_keys:
+            skipped_private += 1
+            continue
+        if rule.endswith(',🤖AI美国节点') and rule_key(rule) in ai_keys:
+            rule = rule[:-len('🤖AI美国节点')] + 'PROXY'
+            remapped += 1
+        exported.append(rule)
+
+    repo_path = REPO / 'clash/rules.yaml'
+    repo = read_yaml(repo_path)['prepend']
+    repo_keys, exp_keys = [rule_key(r) for r in repo], [rule_key(r) for r in exported]
+    repo_set, exp_set = set(repo_keys), set(exp_keys)
+    only_mac = [r for r, k in zip(exported, exp_keys) if k not in repo_set]
+    only_repo = [r for r, k in zip(repo, repo_keys) if k not in exp_set]
+    order_differs = ([k for k in exp_keys if k in repo_set] != [k for k in repo_keys if k in exp_set])
+
+    print(f'Mac override: {len(override)} rules -> exportable {len(exported)} '
+          f'(excluded {skipped_private} local exceptions, reversed {remapped} AI-node remaps)')
+    print(f'Repository:   {len(repo)} rules')
+    print(f'Only on the Mac ({len(only_mac)}):')
+    for rule in only_mac[:20]:
+        print('   +', rule)
+    print(f'Only in the repository ({len(only_repo)}):')
+    for rule in only_repo[:20]:
+        print('   -', rule)
+    print(f'Order differs from the Mac: {order_differs}')
+    if not args.write:
+        print('Report only; re-run with --export --write to rewrite clash/rules.yaml.')
+        return
+
+    header, entries, tail, leftover = repo_entries(repo_path)
+    by_key = {}
+    for comments, rule in entries:
+        by_key.setdefault(rule_key(rule), comments)
+    dropped_comments = sum(len(c) for k, c in by_key.items() if k not in exp_set)
+    out = list(header)
+    for rule in exported:
+        out.extend(by_key.get(rule_key(rule), []))
+        out.append(f"  - '{rule.replace(chr(39), chr(39) * 2)}'")
+    # Trailing comments survive only as blank separators; real ones are reported.
+    dropped_comments += sum(1 for line in leftover if line.strip().startswith('#'))
+    out.extend(line for line in leftover if not line.strip())
+    out.extend(tail)
+    repo_path.write_text('\n'.join(out) + '\n')
+    print(f'Wrote {repo_path}: {len(exported)} rules; dropped {len(only_repo)} repo-only rules '
+          f'and {dropped_comments} comment lines.')
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--check', action='store_true', help='Validate without applying')
+    parser.add_argument('--export', action='store_true', help='Report Mac -> repository')
+    parser.add_argument('--write', action='store_true', help='With --export, rewrite the repo file')
     args = parser.parse_args()
     os.umask(0o077)
+
+    if args.export:
+        export_rules(args)
+        return
 
     registry = read_yaml(STATE / 'profiles.yaml')
     current = next(x for x in registry['items'] if x['uid'] == registry['current'])
@@ -90,14 +197,19 @@ def main():
 
     # Local exceptions: prefer the private file; otherwise take whatever the rules
     # override currently prepends. Script.js no longer carries rules, so nothing is
-    # inferred from it.
+    # inferred from it. Entries already covered by public rules are not exceptions.
+    public_keys = {rule_key(r) for r in public}
     if private_path.exists():
         private = json.loads(private_path.read_text())
+        stale = [r for r in private.get('rules', []) if rule_key(r) in public_keys]
+        if stale:
+            private['rules'] = [r for r in private['rules'] if rule_key(r) not in public_keys]
+            print(f'Note: dropped {len(stale)} local exception(s) already covered by public rules')
     else:
-        private = {'rules': [normalize_local(r) for r in read_yaml(rule_path).get('prepend', [])],
+        private = {'rules': [normalize_local(r) for r in read_yaml(rule_path).get('prepend', [])
+                             if rule_key(r) not in public_keys],
                    'ai_keys': []}
 
-    public_keys = {rule_key(r) for r in public}
     ai_keys = set(private.get('ai_keys', []))
     merged = [r[:-len('PROXY')] + '🤖AI美国节点'
               if r.endswith(',PROXY') and rule_key(r) in ai_keys else r for r in public]
@@ -110,7 +222,7 @@ def main():
     if unknown:
         raise RuntimeError(f'Unknown policy names in merged rules: {unknown}')
 
-    fragment = FRAGMENT_HEADER + '\n' + yaml_text({'prepend': merged, 'append': [], 'delete': []})
+    fragment = fragment_text(merged)
 
     # Clash Verge renders the running config as [rules override prepend] + [subscription
     # rules]. Recover the subscription part so the reload keeps it, and refuse when the
@@ -145,10 +257,17 @@ def main():
         originals[path] = path.read_bytes() if path.exists() else None
         if path.exists():
             shutil.copy2(path, backup / path.name)
+    original_runtime_text = (STATE / 'clash-verge.yaml').read_text()
+
+    def reload(text):
+        # mihomo runs under Clash Verge's privileged service, whose home is the service
+        # directory, so {"path": ...} outside it is rejected. Send the config as payload.
+        controller(runtime, '/configs?force=true', {'payload': text})
+
     try:
         for path, content in writes.items():
             path.write_text(content)
-        controller(runtime, '/configs?force=true', {'path': str(STATE / 'clash-verge.yaml')})
+        reload(yaml_text(candidate_config))
         live = controller(runtime, '/rules')['rules']
         if len(live) != len(live_rules) or [r['proxy'] for r in live] != [policy_of(r) for r in live_rules]:
             raise RuntimeError('Live rules differ after reload')
@@ -161,7 +280,7 @@ def main():
                 path.unlink(missing_ok=True)
             else:
                 path.write_bytes(original)
-        controller(runtime, '/configs?force=true', {'path': str(STATE / 'clash-verge.yaml')})
+        reload(original_runtime_text)
         raise
 
 
