@@ -24,15 +24,16 @@ reviewed override.
    python3 sync-mac.py --export     # report only, never writes
    ```
 
-2. Publish the Mac's rules into the repository:
+2. Register local exceptions in the local exceptions file and add any reviewed new
+   public rules to `clash/rules.yaml`. Then export the reviewed changes:
 
    ```sh
    python3 sync-mac.py --export --write
    ```
 
-   This rewrites `clash/rules.yaml` from the Mac's rules override, keeps the comments
-   attached to each rule, excludes local exceptions, and reverses the AI-node remap so no
-   device-private or device-specific value reaches the public repository.
+   The write export requires the local exceptions file and stops when it finds
+   unclassified rules. It keeps the comments attached to each rule, excludes local
+   exceptions, and reverses the AI-node remap. Check the exact public diff before pushing.
 
 3. Review the diff, then commit and push. Commit messages are English, with the agent
    attribution trailer as the final paragraph:

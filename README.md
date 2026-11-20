@@ -19,14 +19,16 @@ full active list from the Pro. The agent workflow is in [AGENTS.md](AGENTS.md).
 
 ## How to make changes
 
-Rules are edited on this MacBook Pro (in Clash Verge's rules override), then published:
+Edit rules on the MacBook Pro in Clash Verge's rules override. If publishing to the
+public repo, register new local exceptions in the local exceptions file and add any
+reviewed new public rules to `clash/rules.yaml` before using the write export:
 
 ```sh
 cd /path/to/proxy-rules
 python3 sync-mac.py --export        # report the difference first
 python3 sync-mac.py --export --write
-# Clash routing rules are edited only in clash/rules.yaml; the iPhone configuration is still maintained separately
-git add -A && git commit -m "Update rules: xxx" && git push
+git diff -- clash/rules.yaml
+git add -- clash/rules.yaml && git commit -m "Update rules: xxx" && git push
 ```
 
 Editing `clash/rules.yaml` in the repository directly also works, but then this Mac has to

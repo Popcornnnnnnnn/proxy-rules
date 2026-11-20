@@ -169,42 +169,80 @@ def atomic_write(path, contents):
             temporary.unlink(missing_ok=True)
 
 
+def validate_peer_script(path, config, profile_name, profile_script):
+    # Check the actual result of the script. Syntax alone allows later code
+    # in the same script to append or replace the synchronized rules.
+    program = """
+const fs = require('node:fs');
+const vm = require('node:vm');
+const input = JSON.parse(fs.readFileSync(0, 'utf8'));
+let candidate = input.config;
+const expected = JSON.stringify(candidate.rules);
+for (const path of process.argv.slice(1)) {
+  const source = fs.readFileSync(path, 'utf8');
+  const context = Object.assign(Object.create(null), {
+    configText: JSON.stringify(candidate),
+    profileName: input.profileName
+  });
+  candidate = vm.runInNewContext(source + '\\nmain(JSON.parse(configText), profileName);', context,
+    {timeout: 5000, contextCodeGeneration: {strings: false, wasm: false}});
+}
+if (JSON.stringify(candidate.rules) !== expected) process.exit(1);
+"""
+    scripts = [str(path)] + ([str(profile_script)] if profile_script else [])
+    run(['node', '-e', program, *scripts], json.dumps({'config': config, 'profileName': profile_name}))
+
+
 def sync_from_peer(peer, check):
     snapshot = peer_snapshot(peer)
-    script_path = STATE / 'profiles/Script.js'
     runtime_path = STATE / 'clash-verge.yaml'
     registry_path = STATE / 'profiles.yaml'
-    check_path = STATE / 'clash-verge-check.yaml'
-    paths = [script_path, runtime_path, registry_path]
-    if check_path.is_file():
-        paths.append(check_path)
+    original_registry = registry_path.read_bytes()
+    registry = read_yaml(registry_path)
+    items = {item['uid']: item for item in registry['items']}
+    current_profile = items[registry['current']]
+    global_script = items.get('Script', {})
+    if global_script.get('type') != 'script' or global_script.get('file') != 'Script.js':
+        raise RuntimeError('The target Global Extend Script is not registered as Script.js')
+    script_path = STATE / 'profiles/Script.js'
+    profile_script_id = current_profile.get('option', {}).get('script')
+    profile_script = None
+    if profile_script_id:
+        item = items.get(profile_script_id, {})
+        name = item.get('file', '')
+        if item.get('type') != 'script' or not name or Path(name).name != name:
+            raise RuntimeError('The target profile script is not registered')
+        profile_script = STATE / 'profiles' / name
+    paths = [script_path, runtime_path] + ([profile_script] if profile_script else [])
     originals = {path: path.read_bytes() for path in paths}
+    originals[registry_path] = original_registry
     runtime = read_yaml(runtime_path)
     if runtime['mode'] != 'rule' or snapshot['inventory'] or runtime.get('rule-providers'):
         raise RuntimeError('Peer sync requires rule mode with inline rules on both Macs')
     required_policies = {policy_of(rule) for rule in snapshot['rules']}
-    # A previously cloned fallback is regenerated from the source on each sync.
     script = originals[script_path].decode()
     previous_fallbacks = re.search(
         rf'^{re.escape(PEER_BLOCK)}\n  for \(const group of (\[.*\])\) \{{$',
         script, re.MULTILINE)
-    managed_names = ({group['name'] for group in json.loads(previous_fallbacks[1])}
-                     if previous_fallbacks else set())
-    own_groups = [group for group in runtime['proxy-groups']
-                  if group['name'] not in managed_names]
-    known = {group['name'] for group in own_groups} | BUILTIN_POLICIES
-    aliases = [dict(group, url='https://www.gstatic.com/generate_204') for group in snapshot['fallbacks']
-               if group['name'] in required_policies - known and set(group['proxies']) <= known]
-    if required_policies - known - {group['name'] for group in aliases}:
+    groups = runtime['proxy-groups']
+    known = ({group['name'] for group in groups} | {node['name'] for node in runtime.get('proxies', [])}
+             | BUILTIN_POLICIES)
+    fallbacks = {group['name']: group for group in json.loads(previous_fallbacks[1])
+                 if group['name'] in required_policies} if previous_fallbacks else {}
+    for group in snapshot['fallbacks']:
+        if group['name'] in required_policies - known and set(group['proxies']) <= known:
+            fallbacks[group['name']] = dict(group, url='https://www.gstatic.com/generate_204')
+    missing = required_policies - known
+    if missing - fallbacks.keys():
         raise RuntimeError('The target lacks policies required by the source rules')
-    updated_script = peer_script(script, snapshot['rules'], aliases)
+    updated_script = peer_script(script, snapshot['rules'], list(fallbacks.values()))
     if (not check and updated_script == script and runtime['rules'] == snapshot['rules']
-            and runtime['proxy-groups'] == own_groups + aliases
+            and not missing
             and live_rule_identities(runtime) == snapshot['live']):
         return
 
     candidate = dict(runtime, rules=snapshot['rules'])
-    candidate['proxy-groups'] = own_groups + aliases
+    candidate['proxy-groups'] = groups + [group for name, group in fallbacks.items() if name in missing]
     config = yaml_text(candidate)
     with tempfile.TemporaryDirectory(prefix='clash-peer-') as temporary:
         test_dir = Path(temporary)
@@ -212,7 +250,7 @@ def sync_from_peer(peer, check):
         yaml = test_dir / 'clash.yaml'
         js.write_text(updated_script)
         yaml.write_text(config)
-        run(['node', '--check', str(js)])
+        validate_peer_script(js, candidate, current_profile.get('name', ''), profile_script)
         run([MIHOMO, '-t', '-d', str(STATE), '-f', str(yaml)])
     if check:
         print(f'Validated {len(snapshot["rules"])} source rules on the target')
@@ -221,11 +259,10 @@ def sync_from_peer(peer, check):
     # Do not overwrite a subscription refresh that happened during validation.
     if any(path.read_bytes() != saved for path, saved in originals.items()):
         raise RuntimeError('Clash files changed during validation; try again')
-    backup = Path(tempfile.mkdtemp(prefix=f'{datetime.now():%Y%m%d-%H%M%S}-clash-peer-',
-                                  dir=STATE / 'backups-codex'))
+    backup_root = STATE / 'backups-codex'
+    backup_root.mkdir(exist_ok=True)
+    backup = Path(tempfile.mkdtemp(prefix=f'{datetime.now():%Y%m%d-%H%M%S}-clash-peer-', dir=backup_root))
     writes = {script_path: updated_script.encode(), runtime_path: config.encode()}
-    if check_path in originals:
-        writes[check_path] = config.encode()
     for path in writes:
         (backup / path.name).write_bytes(originals[path])
     applied = []
@@ -243,9 +280,14 @@ def sync_from_peer(peer, check):
             raise RuntimeError('Target and source live rule order or policy differ')
     except (Exception, KeyboardInterrupt):
         for path in reversed(applied):
-            if path.read_bytes() == writes[path]:
-                atomic_write(path, originals[path])
-        if reload_attempted and runtime_path.read_bytes() == originals[runtime_path]:
+            try:
+                if path.read_bytes() == writes[path]:
+                    atomic_write(path, originals[path])
+            except FileNotFoundError:
+                # Clash deleted this file itself. Preserve that change and keep restoring.
+                continue
+        if (reload_attempted and runtime_path.is_file()
+                and runtime_path.read_bytes() == originals[runtime_path]):
             controller(runtime, '/configs?force=true', {'payload': originals[runtime_path].decode()})
         raise
     print(f'Synced and verified {len(snapshot["rules"])} ordered rules; backup: {backup}')
@@ -329,6 +371,10 @@ def export_rules(args):
     if not args.write:
         print('Report only; re-run with --export --write to rewrite clash/rules.yaml.')
         return
+    if not private_path.is_file():
+        raise RuntimeError('Public export requires the local exceptions file')
+    if only_mac:
+        raise RuntimeError('Mark local exceptions or add approved public rules to clash/rules.yaml first')
 
     header, entries, tail, leftover = repo_entries(repo_path)
     by_key = {}
