@@ -10,6 +10,11 @@ the two disagree, the Mac is right and the repository is stale.
 Local exceptions (company, intranet, and similar) are deliberately **not** part of the
 mirror. They live in Clash's `profiles/codex-local-rules.json`, outside Git.
 
+To mirror the complete live list to another Mac, use `sync-mac.py --from-peer SSH_ALIAS`
+on the receiving Mac. This transfers the private rules only over the existing SSH
+connection. Point periodic pulls at the Pro and export public rules only from the Pro's
+reviewed override.
+
 ## When rules change on this Mac
 
 1. Check whether the Mac and the repository already agree:
@@ -19,15 +24,16 @@ mirror. They live in Clash's `profiles/codex-local-rules.json`, outside Git.
    python3 sync-mac.py --export     # report only, never writes
    ```
 
-2. Publish the Mac's rules into the repository:
+2. Register local exceptions in the local exceptions file and add any reviewed new
+   public rules to `clash/rules.yaml`. Then export the reviewed changes:
 
    ```sh
    python3 sync-mac.py --export --write
    ```
 
-   This rewrites `clash/rules.yaml` from the Mac's rules override, keeps the comments
-   attached to each rule, excludes local exceptions, and reverses the AI-node remap so no
-   device-private or device-specific value reaches the public repository.
+   The write export requires the local exceptions file and stops when it finds
+   unclassified rules. It keeps the comments attached to each rule, excludes local
+   exceptions, and reverses the AI-node remap. Check the exact public diff before pushing.
 
 3. Review the diff, then commit and push. Commit messages are English, with the agent
    attribution trailer as the final paragraph:
@@ -39,8 +45,9 @@ mirror. They live in Clash's `profiles/codex-local-rules.json`, outside Git.
 4. Tell the user which devices still need action, and never claim a device is updated
    without checking it: Windows fetches `clash/rules.yaml` through Merge/Parsers;
    iPhone updates and re-selects the Shadowrocket configuration; the Redmi needs a
-   regenerated complete configuration (`build-android.py`) imported again; the other Mac
-   needs the same paste or sync step. A GitHub push does not update any device by itself.
+   regenerated complete configuration (`build-android.py`) imported again. The other Mac
+   can pull the full live list from the Pro using SSH. A GitHub push does not update any
+   device by itself.
 
 ## When the repository is edited instead
 
