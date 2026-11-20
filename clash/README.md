@@ -8,7 +8,9 @@ subscription as is and attach this repository's rules as an override.**
 
 ## Connecting each client
 
-**Clash Verge (the other Mac)** — use 「规则覆写」 (Rules override), but it **only accepts pasted content, not a URL**:
+**Clash Verge (the other Mac)** — for an identical active rule list, use the
+[Mac-to-Mac sync](../README.md#mirroring-all-rules-to-the-other-mac). To apply only
+the public rules manually, use 「规则覆写」 (Rules override):
 
 1. Right-click the subscription card → **编辑规则** (Edit Rules)
 2. Paste the entire **contents** of this repository's `clash/rules.yaml` into the text box → save
@@ -58,9 +60,8 @@ applied back to the Mac. See [AGENTS.md](../AGENTS.md) for the full workflow.
 - **Clients that take a URL (Clash for Windows, Shadowrocket)** — the configuration still
   has to be updated and re-applied in the client; a GitHub push by itself does not prove
   that the running rules changed.
-- **Clash Verge on the two Macs (which takes pasted content)** — **does not update
-  automatically.** After a repository-only change, paste it again, or run the sync on this
-  machine:
+- **Clash Verge on the source Mac** — after a repository-only change, paste it again, or
+  run the sync on this machine:
 
   ```sh
   cd /path/to/proxy-rules

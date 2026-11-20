@@ -2,12 +2,12 @@
 
 The public editing entry point for multi-device rules. Each device configures its own
 node subscription; this repository holds only rules and credential-free generation
-scripts — no nodes, subscription URLs, or keys. Each device's rule files are maintained
-separately and are currently not identical rule by rule.
+scripts — no nodes, subscription URLs, or keys. The two Macs can sync their full ordered
+rules over SSH. Other clients still use the public rules for their platform.
 
 **This MacBook Pro is the authoritative source.** Rules are edited on it, and this
-repository mirrors them for the other devices. When the two disagree, the Mac is right and
-the repository is stale. The agent workflow is in [AGENTS.md](AGENTS.md).
+repository mirrors the rules intended for public distribution. The other Mac pulls the
+full active list from the Pro. The agent workflow is in [AGENTS.md](AGENTS.md).
 
 ## Layout
 
@@ -34,13 +34,30 @@ be updated from it (`sync-mac.py`, see below) — the Mac is the source of truth
 repository-only change is not yet in effect anywhere.
 
 Windows and iPhone can fetch the public rule files from the URL below; after an update
-the configuration must still be re-applied in the client. The other Mac uses a local
-override file, and the Redmi uses a complete configuration generated on this machine and
-transferred manually; neither takes effect automatically from a GitHub push.
+the configuration must still be re-applied in the client. The Redmi uses a complete
+configuration generated on this machine and transferred manually.
 
 ```
 https://cdn.jsdelivr.net/gh/Popcornnnnnnnn/proxy-rules@main/<file path>
 ```
+
+## Mirroring all rules to the other Mac
+
+Run on the receiving Mac using a saved SSH alias for the source Mac:
+
+```sh
+python3 sync-mac.py --from-peer source-mac --check
+python3 sync-mac.py --from-peer source-mac
+```
+
+This mode reads the source's live and generated rule lists over SSH. It updates the
+rule assignment in the receiving Mac's Global Extend Script, validates the candidate,
+reloads Clash, and compares the live rule order and policies. Each Mac still uses
+its own node subscriptions and proxy groups. The command requires a trusted SSH host
+key, noninteractive login, Node.js, and a Global Extend Script that assigns
+`config.rules` on the receiving Mac. A successful run with identical rules skips
+the reload. A LaunchAgent can run the same command periodically. Edit rules for the
+pair in the source Mac's override.
 
 ## Applying repository edits to this Mac (secondary)
 
