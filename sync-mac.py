@@ -169,7 +169,7 @@ def atomic_write(path, contents):
             temporary.unlink(missing_ok=True)
 
 
-def validate_peer_script(path, config, profile_name, profile_script):
+def validate_peer_script(path, config, expected_rules, profile_name, profile_script):
     # Check the actual result of the script. Syntax alone allows later code
     # in the same script to append or replace the synchronized rules.
     program = """
@@ -177,7 +177,6 @@ const fs = require('node:fs');
 const vm = require('node:vm');
 const input = JSON.parse(fs.readFileSync(0, 'utf8'));
 let candidate = input.config;
-const expected = JSON.stringify(candidate.rules);
 for (const path of process.argv.slice(1)) {
   const source = fs.readFileSync(path, 'utf8');
   const context = Object.assign(Object.create(null), {
@@ -187,10 +186,14 @@ for (const path of process.argv.slice(1)) {
   candidate = vm.runInNewContext(source + '\\nmain(JSON.parse(configText), profileName);', context,
     {timeout: 5000, contextCodeGeneration: {strings: false, wasm: false}});
 }
-if (JSON.stringify(candidate.rules) !== expected) process.exit(1);
+if (JSON.stringify(candidate.rules) !== JSON.stringify(input.expectedRules)) process.exit(1);
 """
     scripts = [str(path)] + ([str(profile_script)] if profile_script else [])
-    run(['node', '-e', program, *scripts], json.dumps({'config': config, 'profileName': profile_name}))
+    # Start with an unmatched base list so an ineffective rules assignment cannot pass.
+    base_rules = ['MATCH,REJECT'] if expected_rules == ['MATCH,DIRECT'] else ['MATCH,DIRECT']
+    data = {'config': dict(config, rules=base_rules),
+            'expectedRules': expected_rules, 'profileName': profile_name}
+    run(['node', '-e', program, *scripts], json.dumps(data))
 
 
 def sync_from_peer(peer, check):
@@ -236,9 +239,11 @@ def sync_from_peer(peer, check):
     if missing - fallbacks.keys():
         raise RuntimeError('The target lacks policies required by the source rules')
     updated_script = peer_script(script, snapshot['rules'], list(fallbacks.values()))
+    profile_name = current_profile.get('name', '')
     if (not check and updated_script == script and runtime['rules'] == snapshot['rules']
             and not missing
             and live_rule_identities(runtime) == snapshot['live']):
+        validate_peer_script(script_path, runtime, snapshot['rules'], profile_name, profile_script)
         return
 
     candidate = dict(runtime, rules=snapshot['rules'])
@@ -250,7 +255,7 @@ def sync_from_peer(peer, check):
         yaml = test_dir / 'clash.yaml'
         js.write_text(updated_script)
         yaml.write_text(config)
-        validate_peer_script(js, candidate, current_profile.get('name', ''), profile_script)
+        validate_peer_script(js, runtime, snapshot['rules'], profile_name, profile_script)
         run([MIHOMO, '-t', '-d', str(STATE), '-f', str(yaml)])
     if check:
         print(f'Validated {len(snapshot["rules"])} source rules on the target')
@@ -286,9 +291,13 @@ def sync_from_peer(peer, check):
             except FileNotFoundError:
                 # Clash deleted this file itself. Preserve that change and keep restoring.
                 continue
-        if (reload_attempted and runtime_path.is_file()
-                and runtime_path.read_bytes() == originals[runtime_path]):
-            controller(runtime, '/configs?force=true', {'payload': originals[runtime_path].decode()})
+        if reload_attempted:
+            try:
+                disk_matches_backup = runtime_path.read_bytes() == originals[runtime_path]
+            except FileNotFoundError:
+                disk_matches_backup = live_rule_identities(runtime) == snapshot['live']
+            if disk_matches_backup:
+                controller(runtime, '/configs?force=true', {'payload': originals[runtime_path].decode()})
         raise
     print(f'Synced and verified {len(snapshot["rules"])} ordered rules; backup: {backup}')
 
@@ -375,6 +384,9 @@ def export_rules(args):
         raise RuntimeError('Public export requires the local exceptions file')
     if only_mac:
         raise RuntimeError('Mark local exceptions or add approved public rules to clash/rules.yaml first')
+    published_policies = {policy_of(rule) for rule in repo}
+    if any(policy_of(rule) not in published_policies for rule in exported):
+        raise RuntimeError('Public export requires policies already present in clash/rules.yaml')
 
     header, entries, tail, leftover = repo_entries(repo_path)
     by_key = {}
